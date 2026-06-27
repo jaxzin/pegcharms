@@ -34,9 +34,9 @@
     /* 3D stage: a little shorter so the toolbar and the content below stay reachable */
     #stage{height:50vh !important;min-height:320px !important}
 
-    /* Toolbar: wrap into rows, compact the buttons, drop the vertical divider */
-    #toolbar{flex-wrap:wrap !important;justify-content:center !important;max-width:calc(100% - 16px) !important;gap:5px !important;padding:6px !important;bottom:12px !important}
-    #toolbar button{padding:8px 11px !important;font-size:12px !important}
+    /* Controls drop out of the viewport into a full-width bar directly below it */
+    #toolbar{position:static !important;transform:none !important;left:auto !important;bottom:auto !important;width:100% !important;max-width:none !important;border:none !important;border-top:1px solid #1c1f26 !important;border-bottom:1px solid #1c1f26 !important;border-radius:0 !important;background:#0c0e12 !important;backdrop-filter:none !important;flex-wrap:wrap !important;justify-content:center !important;gap:6px !important;padding:10px 12px !important}
+    #toolbar button{padding:9px 12px !important;font-size:12px !important}
     #toolbar>div{display:none !important}
 
     /* Pointer-centric affordances that clutter a phone */
@@ -97,6 +97,7 @@
   </section>
 
   <!-- 3D VIEWPORT -->
+  <div id="stageWrap" style="position:relative">
   <section id="stage" style="position:relative;height:58vh;min-height:440px;background:radial-gradient(120% 120% at 50% 30%,#1a1e26 0%,#0c0e12 55%,#070809 100%);overflow:hidden">
     <div id="viewport" style="position:absolute;inset:0"></div>
 
@@ -108,7 +109,11 @@
     <!-- legend -->
     <div id="legend" style="position:absolute;top:18px;right:20px;display:flex;flex-direction:column;gap:9px;padding:13px 15px;background:rgba(12,14,18,.66);backdrop-filter:blur(8px);border:1px solid #20242e;border-radius:10px;font-size:12px"></div>
 
-    <!-- toolbar -->
+    <div id="hint" style="position:absolute;bottom:20px;left:22px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#5d6470;letter-spacing:.05em">drag · orbit   scroll · zoom</div>
+  </section>
+
+    <!-- Controls: a floating HUD over the viewport on desktop; on mobile (≤720px) this
+         drops out of the viewport into a bar directly below it (see the @media block). -->
     <div id="toolbar" style="position:absolute;bottom:18px;left:50%;transform:translateX(-50%);display:flex;gap:6px;padding:7px;background:rgba(12,14,18,.72);backdrop-filter:blur(10px);border:1px solid #20242e;border-radius:13px;z-index:6">
       <button id="btnRotate" style="display:flex;align-items:center;gap:7px;padding:9px 14px;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;color:#e7e9ee;transition:background .15s">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-2.6-6.4"></path><path d="M21 4v5h-5"></path></svg>Rotate</button>
@@ -124,9 +129,7 @@
       <button id="btnReset" style="display:flex;align-items:center;gap:7px;padding:9px 14px;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;color:#e7e9ee;background:rgba(255,255,255,.06)">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 1 9 9"></path><path d="M3 12V7M3 12h5"></path></svg>Reset</button>
     </div>
-
-    <div id="hint" style="position:absolute;bottom:20px;left:22px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#5d6470;letter-spacing:.05em">drag · orbit   scroll · zoom</div>
-  </section>
+  </div>
 
   <!-- SPEC STRIP -->
   <section id="specStrip" style="display:grid;grid-template-columns:repeat(6,1fr);border-bottom:1px solid #1c1f26;background:#0c0e12"></section>
