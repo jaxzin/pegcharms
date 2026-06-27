@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Through-Hole Band Clasp — CAD Viewer</title>
+<meta name="description" content="Interactive 3D viewer and dimensioned drawing sheets for four adjustable through-hole silicone band clasp concepts.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script type="importmap">
+{"imports":{"three":"https://esm.sh/three@0.160.0","three/addons/":"https://esm.sh/three@0.160.0/examples/jsm/"}}
+</script>
+<style>
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;height:100%}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  button{font-family:'Archivo',sans-serif}
+</style>
+</head>
+<body>
+<div id="app" style="font-family:'Archivo',system-ui,sans-serif;background:#0a0b0e;color:#e7e9ee;min-height:100%;display:flex;flex-direction:column">
+
+  <header style="display:flex;align-items:flex-end;justify-content:space-between;gap:24px;padding:22px 30px 18px;border-bottom:1px solid #1c1f26">
+    <div style="display:flex;align-items:center;gap:18px">
+      <div style="width:38px;height:38px;border:1.5px solid #3a414e;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#9aa3b2" stroke-width="1.6"><rect x="3" y="8" width="18" height="8" rx="2"></rect><line x1="12" y1="4" x2="12" y2="20"></line><circle cx="12" cy="12" r="1.4" fill="#9aa3b2" stroke="none"></circle></svg>
+      </div>
+      <div>
+        <div style="font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:#7b8493;font-weight:600"><span id="kicker">Design A</span> · Adjustable Loop Clasp</div>
+        <h1 id="title" style="margin:3px 0 0;font-size:23px;font-weight:700;letter-spacing:-.01em">Hex Drop-Pin Buckle</h1>
+      </div>
+    </div>
+    <div style="display:flex;gap:26px;text-align:right;font-family:'IBM Plex Mono',monospace">
+      <div><div style="font-size:10px;letter-spacing:.12em;color:#6b7280;text-transform:uppercase">Units</div><div style="font-size:15px;font-weight:500;color:#c3c9d4">mm</div></div>
+      <div><div style="font-size:10px;letter-spacing:.12em;color:#6b7280;text-transform:uppercase">For</div><div style="font-size:15px;font-weight:500;color:#c3c9d4">Ø20 band</div></div>
+      <div><div style="font-size:10px;letter-spacing:.12em;color:#6b7280;text-transform:uppercase">Finish</div><div id="finishName" style="font-size:15px;font-weight:500;color:#c3c9d4">Anodized Aluminum</div></div>
+    </div>
+  </header>
+
+  <!-- DESIGN SWITCHER -->
+  <section style="display:flex;align-items:center;justify-content:space-between;gap:20px;padding:13px 30px;border-bottom:1px solid #1c1f26;background:#0c0e12">
+    <div id="tabs" style="display:flex;gap:4px;padding:4px;background:#15181f;border:1px solid #20242e;border-radius:12px">
+      <button data-design="0" style="padding:9px 16px;border:none;border-radius:9px;cursor:pointer;font-size:13px;font-weight:600;transition:all .15s"><span style="font-family:'IBM Plex Mono',monospace;opacity:.7;margin-right:7px">A</span>Drop-Pin Buckle</button>
+      <button data-design="1" style="padding:9px 16px;border:none;border-radius:9px;cursor:pointer;font-size:13px;font-weight:600;transition:all .15s"><span style="font-family:'IBM Plex Mono',monospace;opacity:.7;margin-right:7px">B</span>Snap Plate</button>
+      <button data-design="2" style="padding:9px 16px;border:none;border-radius:9px;cursor:pointer;font-size:13px;font-weight:600;transition:all .15s"><span style="font-family:'IBM Plex Mono',monospace;opacity:.7;margin-right:7px">C</span>Threaded Clamp</button>
+      <button data-design="3" style="padding:9px 16px;border:none;border-radius:9px;cursor:pointer;font-size:13px;font-weight:600;transition:all .15s"><span style="font-family:'IBM Plex Mono',monospace;opacity:.7;margin-right:7px">D</span>Press-Stud</button>
+    </div>
+    <div id="tagline" style="font-size:13px;color:#8a93a2;max-width:540px;text-align:right;line-height:1.4"></div>
+  </section>
+
+  <!-- 3D VIEWPORT -->
+  <section style="position:relative;height:58vh;min-height:440px;background:radial-gradient(120% 120% at 50% 30%,#1a1e26 0%,#0c0e12 55%,#070809 100%);overflow:hidden">
+    <div id="viewport" style="position:absolute;inset:0"></div>
+
+    <div id="loading" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:#0a0c10;z-index:5">
+      <div style="width:34px;height:34px;border:2.5px solid #232833;border-top-color:#5b8cff;border-radius:50%;animation:spin .9s linear infinite"></div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#7b8493;letter-spacing:.08em">Compiling geometry…</div>
+    </div>
+
+    <!-- legend -->
+    <div id="legend" style="position:absolute;top:18px;right:20px;display:flex;flex-direction:column;gap:9px;padding:13px 15px;background:rgba(12,14,18,.66);backdrop-filter:blur(8px);border:1px solid #20242e;border-radius:10px;font-size:12px"></div>
+
+    <!-- toolbar -->
+    <div style="position:absolute;bottom:18px;left:50%;transform:translateX(-50%);display:flex;gap:6px;padding:7px;background:rgba(12,14,18,.72);backdrop-filter:blur(10px);border:1px solid #20242e;border-radius:13px;z-index:6">
+      <button id="btnRotate" style="display:flex;align-items:center;gap:7px;padding:9px 14px;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;color:#e7e9ee;transition:background .15s">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-2.6-6.4"></path><path d="M21 4v5h-5"></path></svg>Rotate</button>
+      <button id="btnExplode" style="display:flex;align-items:center;gap:7px;padding:9px 14px;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;color:#e7e9ee;transition:background .15s">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v4M12 17v4M3 12h4M17 12h4"></path><rect x="9.5" y="9.5" width="5" height="5" rx="1"></rect></svg>Explode</button>
+      <button id="btnWire" style="display:flex;align-items:center;gap:7px;padding:9px 14px;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;color:#e7e9ee;transition:background .15s">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>Wire</button>
+      <button id="btnBand" style="display:flex;align-items:center;gap:7px;padding:9px 14px;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;color:#e7e9ee;transition:background .15s">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="9" width="20" height="6" rx="3"></rect></svg>Band</button>
+      <div style="width:1px;background:#262a34;margin:4px 3px"></div>
+      <button id="btnFinish" style="display:flex;align-items:center;gap:7px;padding:9px 14px;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;color:#e7e9ee;background:rgba(255,255,255,.06)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><path d="M12 3a9 9 0 0 0 0 18"></path></svg>Finish</button>
+      <button id="btnReset" style="display:flex;align-items:center;gap:7px;padding:9px 14px;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;color:#e7e9ee;background:rgba(255,255,255,.06)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 1 9 9"></path><path d="M3 12V7M3 12h5"></path></svg>Reset</button>
+    </div>
+
+    <div style="position:absolute;bottom:20px;left:22px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#5d6470;letter-spacing:.05em">drag · orbit   scroll · zoom</div>
+  </section>
+
+  <!-- SPEC STRIP -->
+  <section id="specStrip" style="display:grid;grid-template-columns:repeat(6,1fr);border-bottom:1px solid #1c1f26;background:#0c0e12"></section>
+
+  <!-- DRAWING SHEET -->
+  <section style="padding:34px 30px 46px;background:#0a0b0e">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;max-width:1080px;margin-left:auto;margin-right:auto;width:100%">
+      <div id="sheetTitle" style="font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:#7b8493;font-weight:600">Dimensioned Drawing</div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#6b7280">Third-angle · all dims in mm</div>
+    </div>
+    <div style="max-width:1080px;margin:0 auto;border-radius:6px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.5)">
+      <div id="sheet" style="min-height:600px;background:#f4f5f3"></div>
+    </div>
+  </section>
+
+</div>
+
+<script type="module">
+const $ = (id) => document.getElementById(id);
+
+class ClaspViewer {
+  constructor(){
+    this.vp = $('viewport');
+    this.loadEl = $('loading');
+    this.sheetEl = $('sheet');
+
+    const FIN = ['Brushed Steel','Black Oxide','Anodized Aluminum','Antique Bronze'];
+    this.FIN = FIN;
+    this.PITCH = 16.6; this.LOBE = 10;
+    this.DESIGNS = [
+      { kicker:'Design A', title:'Hex Drop-Pin Buckle',
+        tagline:'Captive knurled pin drops through the doubled band; hex flats lock rotation. Classic and serviceable.',
+        legend:[['m','Stainless buckle frame'],['p','Captive hex drop-pin'],['b','Silicone band · ×2 layers']],
+        specs:[{k:'Mechanism',v:'Drop-pin',u:''},{k:'Pin hex',v:'5',u:'A/F'},{k:'Holes',v:'1',u:'×2 lyr'},{k:'Body',v:'29×16',u:'mm'},{k:'Adjust step',v:'16.6',u:'mm'},{k:'Tol',v:'±0.1',u:'mm'}] },
+      { kicker:'Design B', title:'Twin-Prong Snap Plate',
+        tagline:'Slim plate with two hex prongs that snap through two holes into a catch plate. Squeeze the tabs to release.',
+        legend:[['m','Snap plate + catch'],['p','Twin hex prongs'],['b','Silicone band · ×2 layers']],
+        specs:[{k:'Mechanism',v:'Snap prong',u:''},{k:'Prong hex',v:'5',u:'A/F'},{k:'Holes',v:'2',u:'×2 lyr'},{k:'Plate',v:'36×26',u:'mm'},{k:'Height',v:'10',u:'mm'},{k:'Release',v:'Squeeze',u:''}] },
+      { kicker:'Design C', title:'Threaded Hex Clamp',
+        tagline:'Hex stud passes the holes; a knurled cap screws down and clamps the layers solid. Heavy-duty, infinitely re-settable.',
+        legend:[['m','Base + knurled cap'],['p','Hex clamp stud'],['b','Silicone band · ×2 layers']],
+        specs:[{k:'Mechanism',v:'Screw clamp',u:''},{k:'Stud hex',v:'5',u:'A/F'},{k:'Holes',v:'1',u:'×2 lyr'},{k:'Cap',v:'Ø16',u:'mm'},{k:'Clamp',v:'Threaded',u:''},{k:'Adjust step',v:'16.6',u:'mm'}] },
+      { kicker:'Design D', title:'One-Piece Press-Stud',
+        tagline:'A single solid hex stud with a mushroom head — the silicone deforms over the head and snaps captive around the post. No moving parts.',
+        legend:[['m','One-piece hex press-stud'],['b','Silicone band · ×2 layers']],
+        specs:[{k:'Mechanism',v:'Press-stud',u:''},{k:'Post hex',v:'5',u:'A/F'},{k:'Holes',v:'1',u:'×2 lyr'},{k:'Head',v:'Ø8.5',u:'mm'},{k:'Parts',v:'1',u:'solid'},{k:'Install',v:'Press-fit',u:''}] },
+    ];
+    // Standalone defaults (mirror the prototype's no-prop render):
+    // finish → Anodized Aluminum, auto-rotate on, band shown, not exploded.
+    this.st = {
+      design: 0,
+      finishIdx: 2,
+      autoRotate: true,
+      exploded: false,
+      wire: false,
+      showBand: true,
+    };
+    this._explodeVal = this.st.exploded ? 1 : 0;
+    this._explodeTarget = this._explodeVal;
+    this._sheet = this._buildSheet(this.st.design);
+  }
+
+  finishName(){ return this.FIN[this.st.finishIdx]; }
+  finishPreset(i){
+    return [
+      {color:0xc4c8ce, metalness:1.0,  roughness:0.34, env:1.05, pin:0x9aa3b4, pinR:0.30},
+      {color:0x33363c, metalness:0.92, roughness:0.52, env:0.70, pin:0x4a4e55, pinR:0.42},
+      {color:0xd9dce0, metalness:1.0,  roughness:0.26, env:1.15, pin:0xc6cace, pinR:0.24},
+      {color:0x82632f, metalness:1.0,  roughness:0.50, env:0.92, pin:0xbb8e4d, pinR:0.40},
+    ][i];
+  }
+
+  async mount(){
+    // Render the UI + dimensioned drawing sheet first — these are pure DOM/SVG and
+    // must not depend on the 3D engine loading (so the sheet survives a slow/blocked CDN).
+    this._wireUI();
+    this._renderUI();
+    this._renderSheet();
+    try{
+      // Three.js is loaded dynamically (over the network) so a failure here only
+      // disables the 3D viewport, leaving the rest of the page intact.
+      const THREE = await import('three');
+      const { OrbitControls } = await import('three/addons/controls/OrbitControls.js');
+      const { RoomEnvironment } = await import('three/addons/environments/RoomEnvironment.js');
+      this.THREE = THREE; this.OrbitControls = OrbitControls; this.RoomEnvironment = RoomEnvironment;
+      this._build();
+      if(this.loadEl) this.loadEl.style.display='none';
+    }catch(e){
+      console.error('clasp build failed', e);
+      if(this.loadEl){
+        this.loadEl.innerHTML = '<div style="font-family:monospace;color:#e06b6b;font-size:13px;max-width:360px;text-align:center;line-height:1.5">3D engine failed to load.<br>'+ (e&&e.message?e.message:'') +'</div>';
+      }
+    }
+  }
+
+  // ===== geometry helpers =====
+  _reg(m){ m.castShadow=true; m.receiveShadow=true; return m; }
+  _RB(w,h,d){ const T=this.THREE; return T.RoundedBoxGeometry ? new T.RoundedBoxGeometry(w,h,d,4,Math.min(w,h,d)*0.16) : new T.BoxGeometry(w,h,d); }
+  _centersIn(xs,xe){ const P=this.PITCH,r=[]; for(let i=Math.ceil(xs/P);i<=Math.floor(xe/P);i++) r.push(i*P); if(!r.length) r.push(0); return r; }
+
+  // one band layer: scalloped lobe-chain slab with real hex through-holes + socket bosses
+  _bandSlab(xs,xe,roundStart,roundEnd,bossDir){
+    const T=this.THREE, R=this.LOBE, P=this.PITCH;
+    const centers=this._centersIn(xs,xe);
+    const firstC=centers[0], lastC=centers[centers.length-1];
+    const half=(x)=>{ let c; if(x<firstC)c=firstC; else if(x>lastC)c=lastC; else c=Math.round(x/P)*P; const dx=x-c,v=R*R-dx*dx; return v>0?Math.sqrt(v):0.0; };
+    const xA=roundStart?firstC-R+0.03:firstC, xB=roundEnd?lastC+R-0.03:lastC, st=0.5;
+    const shape=new T.Shape();
+    shape.moveTo(xA, half(xA));
+    for(let x=xA+st;x<xB;x+=st) shape.lineTo(x, half(x));
+    shape.lineTo(xB, half(xB)); shape.lineTo(xB, -half(xB));
+    for(let x=xB-st;x>xA;x-=st) shape.lineTo(x, -half(x));
+    shape.lineTo(xA,-half(xA)); shape.closePath();
+    const Rh=5/Math.sqrt(3);
+    for(const c of centers){ const h=new T.Path(); for(let k=0;k<6;k++){ const a=Math.PI/180*(60*k+30), px=c+Rh*Math.cos(a), py=Rh*Math.sin(a); k?h.lineTo(px,py):h.moveTo(px,py);} h.closePath(); shape.holes.push(h); }
+    const geo=new T.ExtrudeGeometry(shape,{depth:4,bevelEnabled:true,bevelThickness:0.6,bevelSize:0.6,bevelSegments:2,steps:1,curveSegments:5});
+    geo.translate(0,0,-2);
+    const slab=this._reg(new T.Mesh(geo,this.bandMat)); slab.rotation.x=-Math.PI/2;
+    const g=new T.Group(); g.add(slab);
+    for(const c of centers){
+      const bs=new T.Shape(); bs.absarc(0,0,6.55,0,Math.PI*2,false); const bh=new T.Path(); bh.absarc(0,0,3.5,0,Math.PI*2,true); bs.holes.push(bh);
+      const bg=new T.ExtrudeGeometry(bs,{depth:0.8,bevelEnabled:true,bevelThickness:0.25,bevelSize:0.25,bevelSegments:1,steps:1,curveSegments:26});
+      const bm=this._reg(new T.Mesh(bg,this.bandMat));
+      if(bossDir>0){ bm.rotation.x=-Math.PI/2; bm.position.set(c,2,0); } else { bm.rotation.x=Math.PI/2; bm.position.set(c,-2,0); }
+      g.add(bm);
+    }
+    return {group:g, centers};
+  }
+
+  // ===== frame helpers with real through-holes =====
+  _roundRect(w,d,r){
+    const T=this.THREE,s=new T.Shape(),hw=w/2,hd=d/2;
+    s.moveTo(-hw+r,-hd);
+    s.lineTo(hw-r,-hd); s.absarc(hw-r,-hd+r,r,-Math.PI/2,0,false);
+    s.lineTo(hw,hd-r); s.absarc(hw-r,hd-r,r,0,Math.PI/2,false);
+    s.lineTo(-hw+r,hd); s.absarc(-hw+r,hd-r,r,Math.PI/2,Math.PI,false);
+    s.lineTo(-hw,-hd+r); s.absarc(-hw+r,-hd+r,r,Math.PI,Math.PI*1.5,false);
+    s.closePath(); return s;
+  }
+  _holeBar(wX,dZ,hY,holeR){
+    const T=this.THREE;
+    const s=this._roundRect(wX,dZ,Math.min(wX,dZ)*0.14);
+    const h=new T.Path(); h.absarc(0,0,holeR,0,Math.PI*2,true); s.holes.push(h);
+    const geo=new T.ExtrudeGeometry(s,{depth:hY,bevelEnabled:true,bevelThickness:0.5,bevelSize:0.5,bevelSegments:2,steps:1,curveSegments:10});
+    geo.translate(0,0,-hY/2);
+    const m=this._reg(new T.Mesh(geo,this.metal)); m.rotation.x=-Math.PI/2; return m;
+  }
+  _ring(outR,inR,hY){
+    const T=this.THREE,s=new T.Shape(); s.absarc(0,0,outR,0,Math.PI*2,false); const h=new T.Path(); h.absarc(0,0,inR,0,Math.PI*2,true); s.holes.push(h);
+    const geo=new T.ExtrudeGeometry(s,{depth:hY,bevelEnabled:true,bevelThickness:0.2,bevelSize:0.2,bevelSegments:1,steps:1,curveSegments:34});
+    geo.translate(0,0,-hY/2);
+    return this._reg(new T.Mesh(geo,this.metal));
+  }
+  _holePlateMulti(wX,dZ,hY,holes){
+    const T=this.THREE;
+    const s=this._roundRect(wX,dZ,Math.min(wX,dZ)*0.14);
+    for(const h of holes){ const p=new T.Path(); p.absarc(h.x||0,0,h.r,0,Math.PI*2,true); s.holes.push(p); }
+    const geo=new T.ExtrudeGeometry(s,{depth:hY,bevelEnabled:true,bevelThickness:0.5,bevelSize:0.5,bevelSegments:2,steps:1,curveSegments:10});
+    geo.translate(0,0,-hY/2);
+    const m=this._reg(new T.Mesh(geo,this.metal)); m.rotation.x=-Math.PI/2; return m;
+  }
+  _thread(rHelix,height,pitch,tubeR,mat){
+    const T=this.THREE, turns=height/pitch, N=Math.max(40,Math.ceil(turns*26)), pts=[];
+    for(let i=0;i<=N;i++){ const t=i/N, a=t*turns*Math.PI*2, yy=t*height; pts.push(new T.Vector3(rHelix*Math.cos(a),yy,rHelix*Math.sin(a))); }
+    const geo=new T.TubeGeometry(new T.CatmullRomCurve3(pts),N,tubeR,8,false);
+    return new T.Mesh(geo,mat);
+  }
+
+  // ===== clasp builders (return {group, explode}) =====
+  _claspA(){
+    const T=this.THREE, M=this.metal, P=this.pinMat, g=new T.Group();
+    const topBar=this._holeBar(15,29,3.4,3.0); topBar.position.y=6;
+    const botBar=this._holeBar(15,29,3.4,3.0); botBar.position.y=-6;
+    const postP=this._reg(new T.Mesh(this._RB(15,15,3.4),M)); postP.position.z=12.8;
+    const postN=this._reg(new T.Mesh(this._RB(15,15,3.4),M)); postN.position.z=-12.8;
+    const bossT=this._ring(4.7,3.0,1.9); bossT.rotation.x=-Math.PI/2; bossT.position.y=8.35;
+    const bossB=this._ring(4.2,3.0,1.4); bossB.rotation.x=Math.PI/2; bossB.position.y=-8.35;
+    g.add(topBar,botBar,postP,postN,bossT,bossB);
+    const Rp=5/Math.sqrt(3), pin=new T.Group();
+    const shaft=this._reg(new T.Mesh(new T.CylinderGeometry(Rp,Rp,18,6),P)); shaft.rotation.y=Math.PI/6; shaft.position.y=0.5;
+    const tip=this._reg(new T.Mesh(new T.CylinderGeometry(Rp,Rp*0.5,2.4,6),P)); tip.rotation.y=Math.PI/6; tip.position.y=-9.7;
+    const head=this._reg(new T.Mesh(new T.CylinderGeometry(5.2,5.2,3.4,44),P)); head.position.y=10.9;
+    const knurl=this._reg(new T.Mesh(new T.CylinderGeometry(5.45,5.45,2.4,44,1,true),P)); knurl.position.y=10.9;
+    const collar=this._reg(new T.Mesh(new T.CylinderGeometry(3,3,1.4,32),P)); collar.position.y=8.7;
+    pin.add(shaft,tip,head,knurl,collar); g.add(pin);
+    const explode=(e)=>{ pin.position.y=22*e; };
+    return {group:g, explode};
+  }
+  _claspB(){
+    const T=this.THREE, M=this.metal, P=this.pinMat, g=new T.Group(); g.position.x=8.3;
+    const top=new T.Group();
+    const plate=this._holePlateMulti(36,26,3.6,[]); plate.position.y=5; top.add(plate);
+    const tabP=this._holePlateMulti(9,5,3.2,[]); tabP.position.set(0,5,14.6); top.add(tabP);
+    const tabN=this._holePlateMulti(9,5,3.2,[]); tabN.position.set(0,5,-14.6); top.add(tabN);
+    const Rp=5/Math.sqrt(3);
+    for(const px of [-8.3,8.3]){
+      const prong=this._reg(new T.Mesh(new T.CylinderGeometry(Rp,Rp,10.4,6),P)); prong.rotation.y=Math.PI/6; prong.position.set(px,-2,0); top.add(prong);
+      const barb=this._reg(new T.Mesh(new T.CylinderGeometry(Rp*1.22,Rp*0.55,1.7,6),P)); barb.rotation.y=Math.PI/6; barb.position.set(px,-7.5,0); top.add(barb);
+    }
+    g.add(top);
+    const cat=this._holePlateMulti(36,26,3.2,[{x:-8.3,r:3.2},{x:8.3,r:3.2}]); cat.position.y=-6.0; g.add(cat);
+    const explode=(e)=>{ top.position.y=7*e; cat.position.y=-6.0-7*e; };
+    return {group:g, explode};
+  }
+  _claspC(){
+    const T=this.THREE, M=this.metal, P=this.pinMat, g=new T.Group();
+    const base=new T.Group();
+    const disc=this._reg(new T.Mesh(new T.CylinderGeometry(11,11.6,3,52),M)); disc.position.y=-6; base.add(disc);
+    const Rp=5/Math.sqrt(3);
+    const stud=this._reg(new T.Mesh(new T.CylinderGeometry(Rp,Rp,9,6),P)); stud.rotation.y=Math.PI/6; stud.position.y=-0.5; base.add(stud);
+    const core=this._reg(new T.Mesh(new T.CylinderGeometry(2.3,2.3,6.2,28),P)); core.position.y=6.3; base.add(core);
+    const thr=this._reg(this._thread(2.75,6.0,1.05,0.42,P)); thr.position.y=3.3; base.add(thr);
+    g.add(base);
+    const cap=new T.Group();
+    const capBody=this._reg(new T.Mesh(new T.CylinderGeometry(8,8,6.2,52),P)); capBody.position.y=7;
+    const capKnurl=this._reg(new T.Mesh(new T.CylinderGeometry(8.25,8.25,5.4,64,1,true),P)); capKnurl.position.y=7;
+    const capTop=this._reg(new T.Mesh(new T.CylinderGeometry(7.4,8,1.2,52),P)); capTop.position.y=10.4;
+    cap.add(capBody,capKnurl,capTop); g.add(cap);
+    const explode=(e)=>{ cap.position.y=11*e; base.position.y=-7*e; };
+    return {group:g, explode};
+  }
+
+  _claspD(){
+    const T=this.THREE, M=this.metal, g=new T.Group();
+    const stud=new T.Group();
+    const flange=this._reg(new T.Mesh(new T.CylinderGeometry(6.5,7.0,2.6,44),M)); flange.position.y=-5.3;
+    const Rp=5/Math.sqrt(3);
+    const post=this._reg(new T.Mesh(new T.CylinderGeometry(Rp,Rp,8.6,6),M)); post.rotation.y=Math.PI/6; post.position.y=0;
+    const chamf=this._reg(new T.Mesh(new T.CylinderGeometry(4.3,Rp,1.6,32),M)); chamf.position.y=5.0;
+    const dome=this._reg(new T.Mesh(new T.SphereGeometry(4.3,40,22,0,Math.PI*2,0,Math.PI/2),M)); dome.position.y=5.8; dome.scale.y=0.62;
+    stud.add(flange,post,chamf,dome); g.add(stud);
+    const explode=(e)=>{ stud.position.y=-13*e; };
+    return {group:g, explode};
+  }
+
+  _build(){
+    const THREE=this.THREE, OrbitControls=this.OrbitControls, RoomEnvironment=this.RoomEnvironment;
+    const host=this.vp, W=host.clientWidth||800, H=host.clientHeight||480;
+    const scene=new THREE.Scene(); this.scene=scene;
+    const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});
+    renderer.setSize(W,H); renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+    renderer.outputColorSpace=THREE.SRGBColorSpace; renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=1.05;
+    renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+    host.appendChild(renderer.domElement); this.renderer=renderer;
+    const pmrem=new THREE.PMREMGenerator(renderer); scene.environment=pmrem.fromScene(new RoomEnvironment(),0.04).texture;
+    const camera=new THREE.PerspectiveCamera(34,W/H,0.1,3000); camera.position.set(40,30,58); this.camera=camera;
+    const controls=new OrbitControls(camera,renderer.domElement); controls.enableDamping=true; controls.dampingFactor=0.08; controls.minDistance=24; controls.maxDistance=260; controls.autoRotate=this.st.autoRotate; controls.autoRotateSpeed=1.1; this.controls=controls;
+    const key=new THREE.DirectionalLight(0xffffff,1.45); key.position.set(34,58,26); key.castShadow=true; key.shadow.mapSize.set(2048,2048);
+    const d=60; Object.assign(key.shadow.camera,{left:-d,right:d,top:d,bottom:-d,near:1,far:240}); key.shadow.bias=-0.0004; key.shadow.normalBias=0.6; scene.add(key);
+    const fill=new THREE.DirectionalLight(0x88a0ff,0.35); fill.position.set(-40,20,-30); scene.add(fill);
+    const rim=new THREE.DirectionalLight(0xffffff,0.5); rim.position.set(0,10,-50); scene.add(rim);
+    scene.add(new THREE.AmbientLight(0xffffff,0.16));
+    const ground=new THREE.Mesh(new THREE.PlaneGeometry(500,500), new THREE.ShadowMaterial({opacity:0.3})); ground.rotation.x=-Math.PI/2; ground.position.y=-9.8; ground.receiveShadow=true; scene.add(ground);
+    const root=new THREE.Group(); scene.add(root); this.root=root;
+    const fp=this.finishPreset(this.st.finishIdx);
+    this.metal=new THREE.MeshStandardMaterial({color:fp.color,metalness:fp.metalness,roughness:fp.roughness,envMapIntensity:fp.env});
+    this.pinMat=new THREE.MeshStandardMaterial({color:fp.pin,metalness:1.0,roughness:fp.pinR,envMapIntensity:1.08});
+    this.bandMat=new THREE.MeshPhysicalMaterial({color:0x161719,metalness:0,roughness:0.97,clearcoat:0.16,clearcoatRoughness:0.72,envMapIntensity:0.45,side:THREE.DoubleSide});
+    this._allMeshMats=[this.metal,this.pinMat,this.bandMat];
+    this._assemble(this.st.design);
+    this._raf=0; this._animate();
+    this._ro=new ResizeObserver(()=>this._resize()); this._ro.observe(host);
+  }
+
+  _assemble(design){
+    if(!this.THREE) return;
+    const T=this.THREE;
+    if(this.partsGroup){ this.partsGroup.traverse(o=>{ if(o.geometry) o.geometry.dispose(); }); this.root.remove(this.partsGroup); }
+    const pg=new T.Group(); this.root.add(pg); this.partsGroup=pg;
+    // shared band: standing layer (long, flat ends) + tail (rounded finished end)
+    const top=this._bandSlab(-58,58,false,false,1); top.group.position.y=2;
+    const bot=this._bandSlab(-58,26,false,true,-1); bot.group.position.y=-2;
+    const bandG=new T.Group(); bandG.add(top.group,bot.group); bandG.visible=this.st.showBand; pg.add(bandG);
+    this.bandGroup=bandG; this._bandTop=top.group; this._bandBot=bot.group;
+    // clasp
+    const clasp=[this._claspA,this._claspB,this._claspC,this._claspD][design].call(this); pg.add(clasp.group);
+    this._explodeClasp=clasp.explode; this._claspGroup=clasp.group; this._curDesign=design; this._bandExplodeAmt = (design===0||design===3) ? 0 : 4;
+    this._allMeshMats.forEach(m=>m.wireframe=this.st.wire);
+    this._sheet=this._buildSheet(design);
+    this._renderSheet();
+    this._frame(clasp.group);
+    this._paint();
+  }
+  _paint(){ if(this.renderer&&this.scene&&this.camera) this.renderer.render(this.scene,this.camera); }
+  _renderSheet(){ if(this.sheetEl) this.sheetEl.innerHTML = this._sheet || ''; }
+  _applyBand(e){ const a=(this._bandExplodeAmt==null?4:this._bandExplodeAmt); if(this._bandTop){ this._bandTop.position.y=2+a*e; this._bandBot.position.y=-2-a*e; } }
+
+  _animate=()=>{
+    this._raf=requestAnimationFrame(this._animate);
+    this._explodeVal += (this._explodeTarget-this._explodeVal)*0.12;
+    const e=this._explodeVal;
+    if(this._explodeClasp) this._explodeClasp(e);
+    this._applyBand(e);
+    if(this.controls) this.controls.update();
+    if(this.renderer) this.renderer.render(this.scene,this.camera);
+  }
+
+  _frame(obj){
+    const T=this.THREE; const box=new T.Box3().setFromObject(obj); const sph=box.getBoundingSphere(new T.Sphere());
+    const c=sph.center.clone(), r=sph.radius;
+    const fit = this._curDesign===3 ? 1.7 : 1.35;
+    const dist=r/Math.sin((this.camera.fov*Math.PI/180)/2)*fit;
+    const dir=new T.Vector3(0.46,0.42,0.78).normalize();
+    this.camera.position.copy(c).add(dir.multiplyScalar(dist));
+    this.controls.target.copy(c); this.controls.update();
+    this._home=this.camera.position.clone(); this._homeT=c.clone();
+  }
+
+  _resize(){ const host=this.vp; if(!host||!this.renderer)return; const W=host.clientWidth,H=host.clientHeight; this.camera.aspect=W/H; this.camera.updateProjectionMatrix(); this.renderer.setSize(W,H); }
+  _setFinish(i){ const fp=this.finishPreset(i); if(this.metal){ this.metal.color.setHex(fp.color); this.metal.metalness=fp.metalness; this.metal.roughness=fp.roughness; this.metal.envMapIntensity=fp.env; } if(this.pinMat){ this.pinMat.color.setHex(fp.pin); this.pinMat.roughness=fp.pinR; } this.st.finishIdx=i; this._paint(); this._renderUI(); }
+
+  switchDesign(i){ if(i===this.st.design) return; this.st.design=i; this._sheet=this._buildSheet(i); this._renderSheet(); this._assemble(i); this._renderUI(); }
+  toggleRotate(){ const v=!this.st.autoRotate; this.st.autoRotate=v; if(this.controls) this.controls.autoRotate=v; this._renderUI(); this._paint(); }
+  toggleExplode(){ const v=!this.st.exploded; this.st.exploded=v; this._explodeTarget=v?1:0; this._renderUI(); this._kick(); }
+  toggleWire(){ const v=!this.st.wire; this.st.wire=v; if(this._allMeshMats) this._allMeshMats.forEach(m=>m.wireframe=v); this._renderUI(); this._paint(); }
+  toggleBand(){ const v=!this.st.showBand; this.st.showBand=v; if(this.bandGroup) this.bandGroup.visible=v; this._renderUI(); this._paint(); }
+  cycleFinish(){ this._setFinish((this.st.finishIdx+1)%this.FIN.length); this._paint(); }
+  resetView(){ if(this.camera&&this._home){ this.camera.position.copy(this._home); this.controls.target.copy(this._homeT); this.controls.update(); } this._paint(); }
+  _kick(){ if(this._kicking) return; this._kicking=true; const t0=performance.now(); const step=()=>{ const e=this._explodeVal+=(this._explodeTarget-this._explodeVal)*0.18; if(this._explodeClasp) this._explodeClasp(e); this._applyBand(e); this._paint(); if(Math.abs(this._explodeTarget-this._explodeVal)>0.002 && performance.now()-t0<2000){ setTimeout(step,16); } else { this._kicking=false; } }; step(); }
+
+  // ================= UI WIRING =================
+  _wireUI(){
+    document.querySelectorAll('#tabs button').forEach(b=>{
+      b.addEventListener('click',()=>this.switchDesign(parseInt(b.dataset.design,10)));
+    });
+    $('btnRotate').addEventListener('click',()=>this.toggleRotate());
+    $('btnExplode').addEventListener('click',()=>this.toggleExplode());
+    $('btnWire').addEventListener('click',()=>this.toggleWire());
+    $('btnBand').addEventListener('click',()=>this.toggleBand());
+    $('btnFinish').addEventListener('click',()=>this.cycleFinish());
+    $('btnReset').addEventListener('click',()=>this.resetView());
+  }
+
+  _renderUI(){
+    const active='#2b6fff', idle='rgba(255,255,255,.06)';
+    const d=this.st.design, D=this.DESIGNS[d];
+    const SW={m:'linear-gradient(135deg,#d4d8de,#9098a4)', p:'linear-gradient(135deg,#9aa3b4,#6b7484)', b:'#34373d'};
+
+    // header
+    $('kicker').textContent=D.kicker;
+    $('title').textContent=D.title;
+    $('finishName').textContent=this.finishName();
+    $('tagline').textContent=D.tagline;
+    $('sheetTitle').textContent='Dimensioned Drawing — '+D.title;
+
+    // tabs
+    document.querySelectorAll('#tabs button').forEach(b=>{
+      const i=parseInt(b.dataset.design,10), on=i===d;
+      b.style.background=on?'#e7e9ee':'transparent';
+      b.style.color=on?'#0d0f13':'#9aa3b2';
+    });
+
+    // toolbar toggle states
+    $('btnRotate').style.background=this.st.autoRotate?active:idle;
+    $('btnExplode').style.background=this.st.exploded?active:idle;
+    $('btnWire').style.background=this.st.wire?active:idle;
+    $('btnBand').style.background=this.st.showBand?active:idle;
+
+    // legend
+    $('legend').innerHTML = D.legend.map(l=>(
+      '<div style="display:flex;align-items:center;gap:9px"><span style="width:13px;height:13px;border-radius:3px;background:'+SW[l[0]]+'"></span><span style="color:#aab2c0">'+l[1]+'</span></div>'
+    )).join('');
+
+    // spec strip
+    $('specStrip').innerHTML = D.specs.map(s=>(
+      '<div style="padding:16px 20px;border-right:1px solid #16191f">'+
+        '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#6b7280">'+s.k+'</div>'+
+        '<div style="margin-top:5px;font-size:18px;font-weight:600;color:#dfe3ea;font-family:\'IBM Plex Mono\',monospace">'+s.v+'<span style="font-size:12px;color:#7b8493;font-weight:400;margin-left:3px">'+s.u+'</span></div>'+
+      '</div>'
+    )).join('');
+  }
+
+  // ================= DRAWING SHEET =================
+  _buildSheet(design){
+    const NB='#1b2330', DL='#2f6df0', TX='#1f2a3a', PAPER='#f4f5f3', BANDC='#3a3f47', STL='#e9ecef', GRY='#7a8696';
+    const W=1080, H=900, A=[];
+    A.push('<svg viewBox="0 0 '+W+' '+H+'" width="100%" xmlns="http://www.w3.org/2000/svg" font-family="IBM Plex Mono, monospace">');
+    A.push('<defs><marker id="ar" markerWidth="9" markerHeight="9" refX="7.5" refY="3.2" orient="auto" markerUnits="userSpaceOnUse"><path d="M0.5,0.5 L8,3.2 L0.5,5.9 Z" fill="'+DL+'"/></marker></defs>');
+    A.push('<rect width="'+W+'" height="'+H+'" fill="'+PAPER+'"/>');
+    A.push('<rect x="10" y="10" width="'+(W-20)+'" height="'+(H-20)+'" fill="none" stroke="'+NB+'" stroke-width="1.4"/>');
+    A.push('<rect x="16" y="16" width="'+(W-32)+'" height="'+(H-32)+'" fill="none" stroke="'+NB+'" stroke-width="0.5"/>');
+    A.push('<line x1="16" y1="386" x2="'+(W-16)+'" y2="386" stroke="'+NB+'" stroke-width="0.5"/>');
+    A.push('<line x1="16" y1="720" x2="'+(W-16)+'" y2="720" stroke="'+NB+'" stroke-width="0.5"/>');
+
+    const txt=(x,y,s,o)=>{o=o||{};return '<text x="'+x+'" y="'+y+'" fill="'+(o.fill||DL)+'" font-size="'+(o.fs||12)+'" text-anchor="'+(o.a||'middle')+'"'+(o.w?' font-weight="'+o.w+'"':'')+(o.ls?' letter-spacing="'+o.ls+'"':'')+'>'+s+'</text>';};
+    const lab=(x,y,t)=>txt(x,y,t,{fill:TX,fs:12.5,w:600,a:'start',ls:'0.12em'});
+    const sub=(x,y,t)=>txt(x,y,t,{fill:GRY,fs:10,a:'start',ls:'0.1em'});
+    const hDim=(x1,x2,y,fy,t,bl)=>{const o=[];o.push('<line x1="'+x1+'" y1="'+fy+'" x2="'+x1+'" y2="'+(bl?y+5:y-5)+'" stroke="'+DL+'" stroke-width="0.6"/>');o.push('<line x1="'+x2+'" y1="'+fy+'" x2="'+x2+'" y2="'+(bl?y+5:y-5)+'" stroke="'+DL+'" stroke-width="0.6"/>');o.push('<line x1="'+x1+'" y1="'+y+'" x2="'+x2+'" y2="'+y+'" stroke="'+DL+'" stroke-width="0.9" marker-start="url(#ar)" marker-end="url(#ar)"/>');o.push(txt((x1+x2)/2,bl?y+15:y-6,t));return o.join('');};
+    const vDim=(y1,y2,x,fx,t,lf)=>{const o=[];o.push('<line x1="'+fx+'" y1="'+y1+'" x2="'+(lf?x-5:x+5)+'" y2="'+y1+'" stroke="'+DL+'" stroke-width="0.6"/>');o.push('<line x1="'+fx+'" y1="'+y2+'" x2="'+(lf?x-5:x+5)+'" y2="'+y2+'" stroke="'+DL+'" stroke-width="0.6"/>');o.push('<line x1="'+x+'" y1="'+y1+'" x2="'+x+'" y2="'+y2+'" stroke="'+DL+'" stroke-width="0.9" marker-start="url(#ar)" marker-end="url(#ar)"/>');o.push('<g transform="translate('+(lf?x-7:x+13)+','+((y1+y2)/2)+') rotate(-90)">'+txt(0,0,t)+'</g>');return o.join('');};
+    const hex=(cx,cy,af,rot)=>{const R=af/Math.sqrt(3);let d='';for(let i=0;i<6;i++){const a=Math.PI/180*(60*i+30+(rot||0));d+=(i?'L':'M')+(cx+R*Math.cos(a)).toFixed(1)+' '+(cy+R*Math.sin(a)).toFixed(1);}return d+'Z';};
+    const cl=(x1,y1,x2,y2)=>'<line x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'" stroke="'+DL+'" stroke-width="0.5" stroke-dasharray="7 3 1.5 3" opacity="0.65"/>';
+    const lyr=(Z,Y,bandc)=>{const o=[];o.push('<rect x="'+Z(-10)+'" y="'+Y(4)+'" width="'+(Z(10)-Z(-10))+'" height="'+(Y(0)-Y(4))+'" fill="'+bandc+'" opacity="0.18" stroke="'+bandc+'" stroke-width="0.7"/>');o.push('<rect x="'+Z(-10)+'" y="'+Y(0)+'" width="'+(Z(10)-Z(-10))+'" height="'+(Y(0)-Y(4))+'" fill="'+bandc+'" opacity="0.10" stroke="'+bandc+'" stroke-width="0.7"/>');return o.join('');};
+
+    // ---------- TOP ZONES depend on design ----------
+    if(design===0){
+      // A — ASSEMBLY SECTION (left)
+      (()=>{ const s=5.4, cx=250, cy=205; const Z=mm=>cx+mm*s, Y=mm=>cy-mm*s;
+        A.push(lab(60,52,'ASSEMBLY — SECTION'));
+        A.push('<rect x="'+Z(-14.5)+'" y="'+Y(7.7)+'" width="'+(29*s)+'" height="'+(15.4*s)+'" rx="4" fill="none" stroke="'+NB+'" stroke-width="0.4" stroke-dasharray="4 3" opacity="0.5"/>');
+        A.push('<rect x="'+Z(-14.5)+'" y="'+Y(7.7)+'" width="'+(29*s)+'" height="'+(3.4*s)+'" rx="2" fill="'+STL+'" stroke="'+NB+'" stroke-width="1.2"/>');
+        A.push('<rect x="'+Z(-14.5)+'" y="'+Y(-4.3)+'" width="'+(29*s)+'" height="'+(3.4*s)+'" rx="2" fill="'+STL+'" stroke="'+NB+'" stroke-width="1.2"/>');
+        A.push('<rect x="'+Z(-14.5)+'" y="'+Y(4.3)+'" width="'+(3.4*s)+'" height="'+(8.6*s)+'" fill="'+STL+'" stroke="'+NB+'" stroke-width="1.2"/>');
+        A.push('<rect x="'+Z(11.1)+'" y="'+Y(4.3)+'" width="'+(3.4*s)+'" height="'+(8.6*s)+'" fill="'+STL+'" stroke="'+NB+'" stroke-width="1.2"/>');
+        A.push(lyr(Z,Y,BANDC));
+        A.push('<rect x="'+Z(-1.45)+'" y="'+Y(8)+'" width="'+(2.9*s)+'" height="'+(16*s)+'" fill="#cfd6de" stroke="'+NB+'" stroke-width="0.9"/>');
+        A.push('<rect x="'+Z(-5.2)+'" y="'+Y(12.4)+'" width="'+(10.4*s)+'" height="'+(3.4*s)+'" rx="1.5" fill="#cfd6de" stroke="'+NB+'" stroke-width="1"/>');
+        A.push(cl(Z(0),Y(15),Z(0),Y(-9)));
+        A.push(hDim(Z(-14.5),Z(14.5),Y(-7.7)+30,Y(-7.7),'29',true));
+        A.push(vDim(Y(7.7),Y(-7.7),Z(14.5)+34,Z(14.5),'15.4'));
+        A.push(vDim(Y(4),Y(-4),Z(-14.5)-20,Z(-10),'8',true));
+        A.push(hDim(Z(-5.2),Z(5.2),Y(12.4)-15,Y(12.4),'Ø10'));
+        A.push('<line x1="'+Z(0)+'" y1="'+Y(-6.7)+'" x2="'+Z(13)+'" y2="'+Y(-9.5)+'" stroke="'+DL+'" stroke-width="0.5"/>');
+        A.push(txt(Z(13)+3,Y(-9.5),'Ø6 THRU ×2',{a:'start',fs:10.5}));
+      })();
+      // A — PIN DETAIL (right)
+      (()=>{ const s=8.6, cx=820, cy=210; const X=mm=>cx+mm*s, Y=mm=>cy-mm*s;
+        A.push(lab(600,52,'HEX DROP-PIN')); A.push(sub(600,70,'SCALE 2:1'));
+        A.push('<rect x="'+X(-5.2)+'" y="'+Y(13.5)+'" width="'+(10.4*s)+'" height="'+(3.4*s)+'" rx="1.4" fill="#dfe4ea" stroke="'+NB+'" stroke-width="1.2"/>');
+        for(let i=-4;i<=4;i++) A.push('<line x1="'+X(i*1.1)+'" y1="'+Y(13.5)+'" x2="'+X(i*1.1)+'" y2="'+Y(10.1)+'" stroke="'+NB+'" stroke-width="0.4" opacity="0.5"/>');
+        A.push('<rect x="'+X(-3)+'" y="'+Y(10.1)+'" width="'+(6*s)+'" height="'+(1.4*s)+'" fill="#dfe4ea" stroke="'+NB+'" stroke-width="0.9"/>');
+        A.push('<rect x="'+X(-2.5)+'" y="'+Y(8.7)+'" width="'+(5*s)+'" height="'+(16*s)+'" fill="'+STL+'" stroke="'+NB+'" stroke-width="1.1"/>');
+        A.push('<line x1="'+X(-1.4)+'" y1="'+Y(8.7)+'" x2="'+X(-1.4)+'" y2="'+Y(-7.3)+'" stroke="'+NB+'" stroke-width="0.4" opacity="0.4"/>');
+        A.push('<line x1="'+X(1.4)+'" y1="'+Y(8.7)+'" x2="'+X(1.4)+'" y2="'+Y(-7.3)+'" stroke="'+NB+'" stroke-width="0.4" opacity="0.4"/>');
+        A.push('<path d="M'+X(-2.5)+' '+Y(-7.3)+' L'+X(2.5)+' '+Y(-7.3)+' L'+X(1.2)+' '+Y(-9.5)+' L'+X(-1.2)+' '+Y(-9.5)+' Z" fill="'+STL+'" stroke="'+NB+'" stroke-width="1.1"/>');
+        A.push(cl(X(0),Y(16),X(0),Y(-11)));
+        A.push(hDim(X(-5.2),X(5.2),Y(13.5)+26,Y(15.2),'Ø10',true));
+        A.push(hDim(X(-2.5),X(2.5),Y(-9.5)-13,Y(-9.5),'5 A/F'));
+        A.push(vDim(Y(8.7),Y(-7.3),X(2.5)+34,X(2.5),'16'));
+        A.push(vDim(Y(15.2),Y(13.5),X(-5.2)-15,X(-5.2),'3',true));
+      })();
+    } else if(design===1){
+      // B — ASSEMBLY SECTION
+      (()=>{ const s=4.7, cx=250, cy=205; const Z=mm=>cx+mm*s, Y=mm=>cy-mm*s, X2=mm=>cx+mm*s;
+        A.push(lab(60,52,'ASSEMBLY — SECTION'));
+        // top plate
+        A.push('<rect x="'+Z(-18)+'" y="'+Y(6.8)+'" width="'+(36*s)+'" height="'+(3.6*s)+'" rx="2.4" fill="'+STL+'" stroke="'+NB+'" stroke-width="1.2"/>');
+        // catch plate with two through-holes
+        A.push('<rect x="'+Z(-18)+'" y="'+Y(-4.7)+'" width="'+(36*s)+'" height="'+(3.2*s)+'" rx="2.4" fill="'+STL+'" stroke="'+NB+'" stroke-width="1.2"/>');
+        for(const px of [-8.3,8.3]) A.push('<rect x="'+Z(px-2.5)+'" y="'+Y(-4.7)+'" width="'+(5*s)+'" height="'+(3.2*s)+'" fill="'+PAPER+'" stroke="'+NB+'" stroke-width="0.7"/>');
+        A.push(lyr(Z,Y,BANDC));
+        // two prongs at ±8.3 passing fully through into the catch plate
+        for(const px of [-8.3,8.3]){ A.push('<rect x="'+Z(px-2.5)+'" y="'+Y(6.8)+'" width="'+(5*s)+'" height="'+(14*s)+'" fill="#cfd6de" stroke="'+NB+'" stroke-width="0.9"/>'); A.push('<path d="M'+Z(px-2.9)+' '+Y(-6.8)+' L'+Z(px+2.9)+' '+Y(-6.8)+' L'+Z(px+1.6)+' '+Y(-8.2)+' L'+Z(px-1.6)+' '+Y(-8.2)+' Z" fill="#cfd6de" stroke="'+NB+'" stroke-width="0.8"/>'); A.push(cl(Z(px),Y(9),Z(px),Y(-9))); }
+        A.push(txt(Z(18)+4,Y(-6.6)+4,'Ø6 THRU ×2',{a:'start',fs:10.5}));
+        A.push(hDim(Z(-18),Z(18),Y(-6.4)+28,Y(-6.4),'36',true));
+        A.push(hDim(Z(-8.3),Z(8.3),Y(8.4)+0,Y(8.4),'16.6'));
+        A.push(vDim(Y(8.4),Y(-7.9),Z(18)+30,Z(16),'10'));
+        A.push(vDim(Y(4),Y(-4),Z(-18)-18,Z(-10),'8',true));
+      })();
+      // B — PLATE PLAN + prong
+      (()=>{ const s=4.7, cx=820, cy=170; const X=mm=>cx+mm*s, Z=mm=>cy+mm*s;
+        A.push(lab(600,52,'SNAP PLATE — PLAN'));
+        A.push('<rect x="'+X(-18)+'" y="'+Z(-13)+'" width="'+(36*s)+'" height="'+(26*s)+'" rx="6" fill="'+STL+'" stroke="'+NB+'" stroke-width="1.3"/>');
+        for(const px of [-8.3,8.3]){ A.push('<path d="'+hex(X(px),Z(0),5*s,0)+'" fill="#cfd6de" stroke="'+NB+'" stroke-width="1"/>'); A.push(cl(X(px),Z(-15),X(px),Z(15))); }
+        A.push('<rect x="'+X(-4.5)+'" y="'+Z(-15.6)+'" width="'+(9*s)+'" height="'+(2.6*s)+'" rx="1" fill="'+STL+'" stroke="'+NB+'" stroke-width="0.9"/>');
+        A.push('<rect x="'+X(-4.5)+'" y="'+Z(13)+'" width="'+(9*s)+'" height="'+(2.6*s)+'" rx="1" fill="'+STL+'" stroke="'+NB+'" stroke-width="0.9"/>');
+        A.push(hDim(X(-8.3),X(8.3),Z(-13)-22,Z(-13),'16.6'));
+        A.push(hDim(X(-18),X(18),Z(13)+40,Z(13),'36',true));
+        A.push(vDim(Z(-13),Z(13),X(18)+30,X(18),'26'));
+        A.push(txt(X(8.3)+12,Z(0)+4,'2× hex 5 A/F',{a:'start',fs:11}));
+      })();
+    } else if(design===2){
+      // C — ASSEMBLY SECTION
+      (()=>{ const s=5.2, cx=250, cy=210; const Z=mm=>cx+mm*s, Y=mm=>cy-mm*s;
+        A.push(lab(60,52,'ASSEMBLY — SECTION'));
+        // base disc
+        A.push('<rect x="'+Z(-11)+'" y="'+Y(-4.5)+'" width="'+(22*s)+'" height="'+(3*s)+'" rx="2" fill="'+STL+'" stroke="'+NB+'" stroke-width="1.2"/>');
+        A.push(lyr(Z,Y,BANDC));
+        // stud
+        A.push('<rect x="'+Z(-2.5)+'" y="'+Y(4)+'" width="'+(5*s)+'" height="'+(8.5*s)+'" fill="#cfd6de" stroke="'+NB+'" stroke-width="0.9"/>');
+        A.push('<rect x="'+Z(-2.5)+'" y="'+Y(-4.5)+'" width="'+(5*s)+'" height="'+(8.5*s)+'" fill="#cfd6de" stroke="'+NB+'" stroke-width="0.6" opacity="0.5"/>');
+        // cap
+        A.push('<rect x="'+Z(-8)+'" y="'+Y(10)+'" width="'+(16*s)+'" height="'+(6.2*s)+'" rx="1.5" fill="#cfd6de" stroke="'+NB+'" stroke-width="1.1"/>');
+        for(let i=-7;i<=7;i++) A.push('<line x1="'+Z(i*1.05)+'" y1="'+Y(10)+'" x2="'+Z(i*1.05)+'" y2="'+Y(16.2)+'" stroke="'+NB+'" stroke-width="0.35" opacity="0.45"/>');
+        A.push(cl(Z(0),Y(18),Z(0),Y(-7)));
+        A.push(hDim(Z(-11),Z(11),Y(-6)+24,Y(-6),'Ø22',true));
+        A.push(hDim(Z(-8),Z(8),Y(16.2)+12,Y(16.2),'Ø16',true));
+        A.push(vDim(Y(16.2),Y(-6),Z(11)+34,Z(8),'26'));
+        A.push(vDim(Y(4),Y(-4),Z(-11)-18,Z(-10),'8',true));
+      })();
+      // C — CAP + STUD DETAIL
+      (()=>{ const s=7.4, cx=820, cy=215; const X=mm=>cx+mm*s, Y=mm=>cy-mm*s;
+        A.push(lab(600,52,'CAP & STUD')); A.push(sub(600,70,'SCALE 1.5:1'));
+        A.push('<rect x="'+X(-8)+'" y="'+Y(13)+'" width="'+(16*s)+'" height="'+(6.2*s)+'" rx="2" fill="#dfe4ea" stroke="'+NB+'" stroke-width="1.2"/>');
+        for(let i=-7;i<=7;i++) A.push('<line x1="'+X(i*1.05)+'" y1="'+Y(13)+'" x2="'+X(i*1.05)+'" y2="'+Y(6.8)+'" stroke="'+NB+'" stroke-width="0.35" opacity="0.5"/>');
+        A.push('<rect x="'+X(-2.5)+'" y="'+Y(6.8)+'" width="'+(5*s)+'" height="'+(11*s)+'" fill="'+STL+'" stroke="'+NB+'" stroke-width="1.1"/>');
+        for(let i=0;i<6;i++){ const yy=Y(6.0-i*0.95); A.push('<line x1="'+X(-2.5)+'" y1="'+yy+'" x2="'+X(2.5)+'" y2="'+(yy+5)+'" stroke="'+NB+'" stroke-width="0.5" opacity="0.5"/>'); }
+        A.push('<path d="'+hex(X(0),Y(-1.5),3*s,0)+'" fill="none" stroke="'+NB+'" stroke-width="0.5" stroke-dasharray="3 2" opacity="0.6"/>');
+        A.push('<line x1="'+X(2.5)+'" y1="'+Y(3)+'" x2="'+X(8)+'" y2="'+Y(3)+'" stroke="'+DL+'" stroke-width="0.5"/>');
+        A.push(txt(X(8)+3,Y(3)+4,'M5 thread',{a:'start',fs:11}));
+        A.push(cl(X(0),Y(17),X(0),Y(-5)));
+        A.push(hDim(X(-8),X(8),Y(13)+22,Y(13),'Ø16',true));
+        A.push(hDim(X(-2.5),X(2.5),Y(-4.2)-12,Y(-4.2),'5 A/F'));
+        A.push(vDim(Y(13),Y(6.8),X(8)+20,X(8),'6'));
+        A.push(txt(X(8)+14,Y(10)+4,'knurled cap',{a:'start',fs:11}));
+      })();
+    } else {
+      // D — ASSEMBLY SECTION
+      (()=>{ const s=5.4, cx=250, cy=210; const Z=mm=>cx+mm*s, Y=mm=>cy-mm*s;
+        A.push(lab(60,52,'ASSEMBLY — SECTION'));
+        A.push('<rect x="'+Z(-6.5)+'" y="'+Y(-4)+'" width="'+(13*s)+'" height="'+(2.6*s)+'" rx="1.4" fill="'+STL+'" stroke="'+NB+'" stroke-width="1.2"/>');
+        A.push(lyr(Z,Y,BANDC));
+        A.push('<rect x="'+Z(-2.5)+'" y="'+Y(4)+'" width="'+(5*s)+'" height="'+(8*s)+'" fill="'+STL+'" stroke="'+NB+'" stroke-width="1.1"/>');
+        A.push('<path d="M'+Z(-2.5)+' '+Y(4)+' L'+Z(-4.3)+' '+Y(5.6)+' Q'+Z(0)+' '+Y(9.4)+' '+Z(4.3)+' '+Y(5.6)+' L'+Z(2.5)+' '+Y(4)+' Z" fill="'+STL+'" stroke="'+NB+'" stroke-width="1.2"/>');
+        A.push(cl(Z(0),Y(10),Z(0),Y(-6.6)));
+        A.push(hDim(Z(-6.5),Z(6.5),Y(-4)+26,Y(-4),'Ø13',true));
+        A.push(hDim(Z(-4.3),Z(4.3),Y(9.4)+8,Y(8.4),'Ø8.5'));
+        A.push(vDim(Y(4),Y(-4),Z(-6.5)-18,Z(-4),'8',true));
+        A.push(vDim(Y(8.4),Y(-6.6),Z(8)+22,Z(6.5),'15'));
+        A.push(txt(Z(8)+12,Y(0.6),'ONE SOLID PIECE',{a:'start',fs:10.5}));
+        A.push(txt(Z(8)+12,Y(-1.4),'press-fit',{a:'start',fs:10.5,fill:GRY}));
+      })();
+      // D — STUD DETAIL
+      (()=>{ const s=8.4, cx=820, cy=220; const X=mm=>cx+mm*s, Y=mm=>cy-mm*s;
+        A.push(lab(600,52,'PRESS-STUD — ONE PIECE')); A.push(sub(600,70,'SCALE 2:1'));
+        A.push('<rect x="'+X(-6.5)+'" y="'+Y(-4)+'" width="'+(13*s)+'" height="'+(2.6*s)+'" rx="1.4" fill="#dfe4ea" stroke="'+NB+'" stroke-width="1.2"/>');
+        A.push('<rect x="'+X(-2.5)+'" y="'+Y(4)+'" width="'+(5*s)+'" height="'+(8*s)+'" fill="'+STL+'" stroke="'+NB+'" stroke-width="1.1"/>');
+        A.push('<line x1="'+X(-1.4)+'" y1="'+Y(4)+'" x2="'+X(-1.4)+'" y2="'+Y(-4)+'" stroke="'+NB+'" stroke-width="0.4" opacity="0.4"/>');
+        A.push('<line x1="'+X(1.4)+'" y1="'+Y(4)+'" x2="'+X(1.4)+'" y2="'+Y(-4)+'" stroke="'+NB+'" stroke-width="0.4" opacity="0.4"/>');
+        A.push('<path d="M'+X(-2.5)+' '+Y(4)+' L'+X(-4.3)+' '+Y(5.6)+' Q'+X(0)+' '+Y(9.8)+' '+X(4.3)+' '+Y(5.6)+' L'+X(2.5)+' '+Y(4)+' Z" fill="#dfe4ea" stroke="'+NB+'" stroke-width="1.2"/>');
+        A.push(cl(X(0),Y(11),X(0),Y(-6)));
+        A.push(hDim(X(-4.3),X(4.3),Y(9.8)+8,Y(8.8),'Ø8.5'));
+        A.push(hDim(X(-6.5),X(6.5),Y(-4)+24,Y(-4),'Ø13',true));
+        A.push(vDim(Y(8.6),Y(-6.6),X(6.5)+22,X(6.5),'15'));
+        A.push('<line x1="'+X(2.5)+'" y1="'+Y(0)+'" x2="'+X(8)+'" y2="'+Y(0)+'" stroke="'+DL+'" stroke-width="0.5"/>');
+        A.push(txt(X(8)+3,Y(0)+4,'5 A/F hex post',{a:'start',fs:11}));
+      })();
+    }
+
+    // ---------- SHARED: BAND DETAIL (the dimensioned part) ----------
+    (()=>{ const s=6.4, cx=410, cyc=505; const X=mm=>cx+mm*s, Z=mm=>cyc+mm*s, P=this.PITCH, R=this.LOBE;
+      A.push(lab(60,418,'SILICONE BAND — bead chain, true hex through-holes'));
+      A.push(sub(60,436,'Ø20 lobes · pitch 16.6 · ×17 over 224 length'));
+      const half=(x)=>{ const c=Math.round(x/P)*P, dx=x-c, v=R*R-dx*dx; return v>0?Math.sqrt(v):0; };
+      const cs=[-2*P,-P,0,P,2*P]; const x0=cs[0]-R, x1=cs[cs.length-1]+R;
+      let d='M '+X(x0).toFixed(1)+' '+Z(-half(x0)).toFixed(1);
+      for(let x=x0;x<=x1;x+=0.6) d+=' L '+X(x).toFixed(1)+' '+Z(-half(x)).toFixed(1);
+      for(let x=x1;x>=x0;x-=0.6) d+=' L '+X(x).toFixed(1)+' '+Z(half(x)).toFixed(1);
+      d+=' Z';
+      A.push('<path d="'+d+'" fill="'+BANDC+'" opacity="0.14" stroke="'+BANDC+'" stroke-width="1.1"/>');
+      for(const c of cs){ A.push('<circle cx="'+X(c)+'" cy="'+Z(0)+'" r="'+(6.55*s)+'" fill="none" stroke="'+NB+'" stroke-width="0.7" opacity="0.65"/>'); A.push('<circle cx="'+X(c)+'" cy="'+Z(0)+'" r="'+(3.5*s)+'" fill="#fff" stroke="'+NB+'" stroke-width="0.8"/>'); A.push('<path d="'+hex(X(c),Z(0),5*s,0)+'" fill="'+STL+'" stroke="'+NB+'" stroke-width="1"/>'); A.push(cl(X(c),Z(-12),X(c),Z(12))); }
+      A.push(cl(X(x0-2),Z(0),X(x1+2),Z(0)));
+      A.push(hDim(X(0),X(P),Z(-10.6),Z(-half(0)),'16.6'));
+      A.push(vDim(Z(-10),Z(10),X(0)-6.55*s-16,X(0),'Ø20',true));
+      A.push(vDim(Z(-half(P/2)),Z(half(P/2)),X(P/2)+12,X(P/2),'11.1'));
+      A.push(hDim(X(2*P-6.55),X(2*P+6.55),Z(10.6)+14,Z(8),'13.1',true));
+      // SECTION (thickness) at right
+      (()=>{ const s2=7.4, zx=720, zy=470; const ZZ=mm=>zx+mm*s2, YY=mm=>zy-mm*s2;
+        A.push(sub(zx-44,zy-7.2*s2-14,'SECTION'));
+        A.push('<rect x="'+ZZ(-10)+'" y="'+YY(2)+'" width="'+(20*s2)+'" height="'+(4*s2)+'" rx="1.4" fill="'+BANDC+'" opacity="0.16" stroke="'+BANDC+'" stroke-width="1"/>');
+        // socket counterbore reduces to 2mm rim
+        A.push('<rect x="'+ZZ(-3.5)+'" y="'+YY(2)+'" width="'+(7*s2)+'" height="'+(1*s2)+'" fill="'+PAPER+'" stroke="'+NB+'" stroke-width="0.8"/>');
+        A.push('<rect x="'+ZZ(-2.5)+'" y="'+YY(2)+'" width="'+(5*s2)+'" height="'+(4*s2)+'" fill="'+PAPER+'" stroke="'+NB+'" stroke-width="0.9"/>');
+        A.push(cl(ZZ(0),YY(4.5),ZZ(0),YY(-4)));
+        A.push(vDim(YY(2),YY(-2),ZZ(10)+18,ZZ(10),'4'));
+        A.push(vDim(YY(1),YY(-2),ZZ(-10)-16,ZZ(-3.5),'2',true));
+        A.push(hDim(ZZ(-10),ZZ(10),YY(-2)+30,YY(-2),'20',true));
+        A.push(hDim(ZZ(-3.5),ZZ(3.5),YY(2)-14,YY(2),'Ø7'));
+      })();
+      // HOLE DETAIL (3:1) far right
+      (()=>{ const s3=11, hx=945, hy=485;
+        A.push(sub(hx-40,hy-7.2*11-14,'HOLE 3:1'));
+        A.push('<circle cx="'+hx+'" cy="'+hy+'" r="'+(6.55*s3)+'" fill="none" stroke="'+NB+'" stroke-width="1.1"/>');
+        A.push('<circle cx="'+hx+'" cy="'+hy+'" r="'+(3.5*s3)+'" fill="#fff" stroke="'+NB+'" stroke-width="1"/>');
+        A.push('<path d="'+hex(hx,hy,5*s3,0)+'" fill="'+STL+'" stroke="'+NB+'" stroke-width="1.2"/>');
+        A.push(txt(hx,hy+2,'5',{fs:12,w:600}));
+        A.push('<line x1="'+hx+'" y1="'+hy+'" x2="'+(hx+6.55*s3*0.7)+'" y2="'+(hy-6.55*s3*0.7)+'" stroke="'+DL+'" stroke-width="0.6"/>');
+        A.push(txt(hx+6.55*s3*0.7+4,hy-6.55*s3*0.7-2,'Ø13.1',{a:'start',fs:11}));
+      })();
+    })();
+
+    // ---------- TITLE BLOCK ----------
+    (()=>{ const D=this.DESIGNS[design]; const x=16,y=H-104,w=W-32,h=88;
+      A.push('<rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" fill="#eceef0" stroke="'+NB+'" stroke-width="1"/>');
+      const cols=[0,300,470,640,810,w];
+      for(let i=1;i<cols.length-1;i++) A.push('<line x1="'+(x+cols[i])+'" y1="'+y+'" x2="'+(x+cols[i])+'" y2="'+(y+h)+'" stroke="'+NB+'" stroke-width="0.6"/>');
+      A.push('<line x1="'+x+'" y1="'+(y+44)+'" x2="'+(x+cols[1])+'" y2="'+(y+44)+'" stroke="'+NB+'" stroke-width="0.6"/>');
+      const cell=(cx,cy,k,v,big)=>{A.push(txt(cx,cy,k,{fill:GRY,fs:9.5,a:'start',ls:'0.12em'}));A.push(txt(cx,cy+(big?22:18),v,{fill:TX,fs:big?15:12.5,a:'start',w:big?700:500}));};
+      cell(x+16,y+19,'TITLE',D.title.toUpperCase(),true);
+      cell(x+16,y+58,'ASSEMBLY','Adjustable through-hole loop');
+      cell(x+cols[1]+16,y+19,'MATERIAL',this.finishName());
+      cell(x+cols[1]+16,y+58,'BAND','Silicone · hex 5 A/F @16.6');
+      cell(x+cols[2]+16,y+19,'UNITS','mm');
+      cell(x+cols[2]+16,y+58,'TOL','±0.1');
+      cell(x+cols[3]+16,y+19,'PROJECTION','Third angle');
+      cell(x+cols[3]+16,y+58,'SCALE','1:1 / detail');
+      cell(x+cols[4]+16,y+19,'DWG No.','BC-00'+(design+1));
+      cell(x+cols[4]+16,y+58,'REV','B  ·  '+(design+1)+'/3');
+    })();
+
+    A.push('</svg>'); return A.join('');
+  }
+}
+
+const viewer = new ClaspViewer();
+viewer.mount();
+window.__claspViewer = viewer;
+</script>
+</body>
+</html>
